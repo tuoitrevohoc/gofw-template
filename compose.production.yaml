@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   backend:
-    image: ghcr.io/tuoitrevohoc/gofw/gofw-backend:latest
+    image: ghcr.io/tuoitrevohoc/gofw-template/gofw-backend:latest
     ports:
       - 8000
       - 2112
@@ -22,7 +22,7 @@ services:
     depends_on:
       - postgres
   frontend:
-    image: ghcr.io/tuoitrevohoc/gofw/gofw-frontend:latest
+    image: ghcr.io/tuoitrevohoc/gofw-template/gofw-frontend:latest
     ports:
       - "443:443"
       - "80:80"
