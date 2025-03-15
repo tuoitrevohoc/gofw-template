@@ -1,0 +1,3 @@
+db_url: "postgresql://dev:dev@postgres:5432/app?sslmode=disable"
+port: "8000"
+redis_url: "redis:6379"

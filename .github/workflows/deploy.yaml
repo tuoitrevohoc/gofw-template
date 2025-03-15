@@ -1,0 +1,102 @@
+name: Deploy to a server
+
+on:
+  push:
+    branches:
+      - main # Change this to your default branch if it's different
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Frontend
+        uses: docker/build-push-action@v2
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/gofw-frontend:latest
+
+  build-backend:
+    permissions:
+      contents: write
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Backend
+        uses: docker/build-push-action@v2
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/gofw-backend:latest
+
+# TODO: Uncomment this when we have a server to deploy to
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: [build-frontend, build-backend] # Ensure this job runs after both builds
+#     permissions:
+#       contents: write
+#       packages: write
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+
+#       - name: Copy compose.${ENV}.yaml and config folder
+#         run: |
+#           cat <<EOF > /tmp/key
+#           ${{ secrets.SSH_DEPLOY_KEY }}
+#           EOF
+#           chmod 600 /tmp/key
+#           scp -o StrictHostKeyChecking=no -i /tmp/key compose.${{ secrets.ENV }}.yaml ${{ secrets.SSH_DEPLOY_USER }}@${{ secrets.SSH_DEPLOY_HOST }}:/deploy/docker-compose.yaml
+#           scp -o StrictHostKeyChecking=no -i /tmp/key -r config/ ${{ secrets.SSH_DEPLOY_USER }}@${{ secrets.SSH_DEPLOY_HOST }}:/deploy/
+#           rm /tmp/key
+
+#       - name: Execute deployment script
+#         uses: appleboy/ssh-action@v0.1.0
+#         with:
+#           host: ${{ secrets.SSH_DEPLOY_HOST }} # Your Vultr server IP
+#           username: ${{ secrets.SSH_DEPLOY_USER }} # Your SSH username
+#           key: ${{ secrets.SSH_DEPLOY_KEY }} # Your private SSH key
+#           script: |
+#             #!/bin/bash
+
+#             cd /deploy
+
+#             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
+
+#             export DOMAIN=${{ secrets.DOMAIN }}
+#             export GRAFANA_DOMAIN=${{ secrets.GRAFANA_DOMAIN }}
+#             export PROMETHEUS_DOMAIN=${{ secrets.PROMETHEUS_DOMAIN }}
+#             export ENV=${{ secrets.ENV }}
+#             export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+#             export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+#             export POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+#             export DB_URL="postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}?sslmode=disable"
+#             export JWT_SECRET=${{ secrets.JWT_SECRET }}
+#             export ORIGIN=${{ secrets.ORIGIN }}
+
+#             docker compose pull
+#             docker compose -f docker-compose.yaml up -d --force-recreate --build

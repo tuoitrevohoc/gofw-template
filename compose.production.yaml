@@ -1,0 +1,127 @@
+version: "3.8"
+
+services:
+  backend:
+    image: ghcr.io/tuoitrevohoc/gofw/gofw-backend:latest
+    ports:
+      - 8000
+      - 2112
+    environment:
+      - ENV=${ENV}
+      - DB_URL=${DB_URL}
+      - DOMAIN=${DOMAIN}
+      - ORIGIN=https://${DOMAIN}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - .:/workspace
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - postgres
+  frontend:
+    image: ghcr.io/tuoitrevohoc/gofw/gofw-frontend:latest
+    ports:
+      - "443:443"
+      - "80:80"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - GRAFANA_DOMAIN=${GRAFANA_DOMAIN}
+      - PROMETHEUS_DOMAIN=${PROMETHEUS_DOMAIN}
+    volumes:
+      - ./config/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - 6379
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  statsd_exporter:
+    image: prom/statsd-exporter:latest
+    ports:
+      - 9125/udp # StatsD input
+      - 9102 # Prometheus metrics
+    volumes:
+      - ./config/statsd:/etc/statsd-exporter
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9000
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.listen-address=0.0.0.0:9090"
+      - "--web.enable-lifecycle"
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - 3100
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./config/loki:/etc/loki
+      - loki_data:/loki
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    volumes:
+      - ./config/promtail:/etc/promtail
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    ports:
+      - 3200
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  caddy_data:

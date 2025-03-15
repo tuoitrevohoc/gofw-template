@@ -1,0 +1,27 @@
+schema:
+  - schema/graphql/*.graphql
+
+exec:
+  filename: gen/go/graphql/generated.go
+  package: graphql
+
+model:
+  filename: gen/go/graphql/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: internal/resolvers
+  package: resolvers
+  filename_template: "{name}.resolvers.go"
+
+autobind:
+  - "github.com/tuoitrevohoc/gofw-template/backend/gen/go/ent"
+
+models:
+  ID:
+    model:
+      - github.com/tuoitrevohoc/gofw/packages/scalars.GUID
+  Node:
+    model:
+      - "github.com/tuoitrevohoc/gofw-template/backend/gen/go/ent.Noder"
