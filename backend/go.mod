@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/lib/pq v1.10.9
 	github.com/redis/go-redis/v9 v9.7.1
-	github.com/tuoitrevohoc/gofw v0.0.0-00010101000000-000000000000
+	github.com/tuoitrevohoc/gofw v0.0.1
 	github.com/vektah/gqlparser/v2 v2.5.23
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.12.0
@@ -64,4 +64,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/tuoitrevohoc/gofw => github.com/tuoitrevohoc/gofw v0.0.0-20250315130909-80419b29a233
+replace github.com/tuoitrevohoc/gofw => github.com/tuoitrevohoc/gofw v0.0.2-0.20250315163522-a581a31dd20b

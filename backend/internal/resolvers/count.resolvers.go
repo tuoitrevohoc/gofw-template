@@ -33,27 +33,7 @@ func (r *queryResolver) Count(ctx context.Context) (int, error) {
 
 // CountUpdated is the resolver for the countUpdated field.
 func (r *subscriptionResolver) CountUpdated(ctx context.Context) (<-chan int, error) {
-	subscription, err := r.countSubscriber.Subscribe(ctx, countChannel)
-
-	if err != nil {
-		return nil, err
-	}
-
-	ch := make(chan int)
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				subscription.Close()
-				return
-			case msg := <-subscription.Channel():
-				ch <- msg
-			}
-		}
-	}()
-
-	return ch, nil
+	return r.countSubscriber.SubscribeToChannel(ctx, countChannel)
 }
 
 // Mutation returns graphql1.MutationResolver implementation.
