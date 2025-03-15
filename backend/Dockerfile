@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o main ./cmd/service/main.go
+RUN go build -o main ./cmd/server/main.go
 
 FROM ubuntu:latest
 
